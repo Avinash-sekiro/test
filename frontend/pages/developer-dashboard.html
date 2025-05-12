@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Developer Dashboard - AI Language Labs</title>
+  <link rel="stylesheet" href="../css/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+  <div class="dashboard-container">
+    <header class="dashboard-header">
+      <div class="logo">
+        <h1>AI Language Labs</h1>
+      </div>
+      <div class="user-info">
+        <span id="userEmail"></span>
+        <span id="userRole"></span>
+        <span id="userDisplayName" style="display: none;"></span>
+        <button id="logoutBtn" class="btn btn-danger">Logout</button>
+      </div>
+    </header>
+    
+    <main class="dashboard-content">
+      <div class="sidebar">
+        <nav>
+          <ul>
+            <li><a href="#" class="active" id="dashboardLink"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li><a href="#" id="profileLink"><i class="fas fa-user"></i> Profile</a></li>
+            <li><a href="#" id="projectsLink"><i class="fas fa-code"></i> Projects</a></li>
+            <li><a href="#" id="apisLink"><i class="fas fa-plug"></i> APIs</a></li>
+            <li><a href="#" id="settingsLink"><i class="fas fa-cog"></i> Settings</a></li>
+          </ul>
+        </nav>
+      </div>
+      
+      <div class="content-area">
+        <!-- Dashboard Section -->
+        <section class="dashboard-section" id="dashboardSection">
+          <h2>Developer Dashboard</h2>
+          <div class="stats-cards">
+            <div class="card">
+              <div class="card-icon">
+                <i class="fas fa-code"></i>
+              </div>
+              <div class="card-content">
+                <h3>Active Projects</h3>
+                <p id="totalProjects">Loading...</p>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-icon">
+                <i class="fas fa-plug"></i>
+              </div>
+              <div class="card-content">
+                <h3>API Keys</h3>
+                <p id="apiKeys">Loading...</p>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-icon">
+                <i class="fas fa-chart-line"></i>
+              </div>
+              <div class="card-content">
+                <h3>API Usage</h3>
+                <p id="apiUsage">Loading...</p>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-icon">
+                <i class="fas fa-calendar-alt"></i>
+              </div>
+              <div class="card-content">
+                <h3>Last Activity</h3>
+                <p id="lastActivity">Loading...</p>
+              </div>
+            </div>
+          </div>
+        </section>
+        
+        <!-- Profile Section -->
+        <section class="dashboard-section hidden" id="profileSection">
+          <h2>Developer Profile</h2>
+          <div class="profile-info">
+            <div class="profile-item">
+              <label>Email:</label>
+              <span id="profileEmail"></span>
+            </div>
+            <div class="profile-item">
+              <label>Role:</label>
+              <span id="profileRole"></span>
+            </div>
+            <div class="profile-item">
+              <label>Developer Name:</label>
+              <span id="profileDisplayName"></span>
+            </div>
+            <div class="profile-item">
+              <label>GitHub:</label>
+              <span id="profileGithub">Not available</span>
+            </div>
+            <div class="profile-item">
+              <label>Contact Number:</label>
+              <span id="profileContact">Not available</span>
+            </div>
+            <div class="profile-actions">
+              <button id="editProfileBtn" class="btn btn-primary">Edit Profile</button>
+            </div>
+          </div>
+        </section>
+        
+        <!-- Projects Section -->
+        <section class="dashboard-section hidden" id="projectsSection">
+          <h2>Projects</h2>
+          <div class="projects-actions">
+            <button id="createProjectBtn" class="btn btn-primary">Create New Project</button>
+          </div>
+          <div class="projects-list" id="projectsList">
+            <p>Loading projects...</p>
+          </div>
+        </section>
+        
+        <!-- APIs Section -->
+        <section class="dashboard-section hidden" id="apisSection">
+          <h2>API Management</h2>
+          <div class="apis-actions">
+            <button id="generateApiKeyBtn" class="btn btn-primary">Generate New API Key</button>
+          </div>
+          <div class="apis-list" id="apisList">
+            <p>Loading API keys...</p>
+          </div>
+        </section>
+        
+        <!-- Settings Section -->
+        <section class="dashboard-section hidden" id="settingsSection">
+          <h2>Settings</h2>
+          <div class="settings-form">
+            <div class="form-group">
+              <label for="notificationSetting">Email Notifications</label>
+              <select id="notificationSetting" class="form-control">
+                <option value="all">All notifications</option>
+                <option value="important">Important only</option>
+                <option value="none">None</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="privacySetting">Privacy</label>
+              <select id="privacySetting" class="form-control">
+                <option value="public">Public profile</option>
+                <option value="private">Private profile</option>
+              </select>
+            </div>
+            <div class="form-actions">
+              <button id="saveSettingsBtn" class="btn btn-primary">Save Settings</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+  
+  <!-- Modal -->
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <span id="closeModalBtn" class="close-btn">&times;</span>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+  
+  <!-- Scripts -->
+  <script src="../js/config.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/dashboard.js"></script>
+  <script src="../js/developer.js"></script>
+</body>
+</html>

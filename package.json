@@ -1,0 +1,20 @@
+{
+  "name": "ai-language-labs",
+  "version": "1.0.0",
+  "description": "AI Language Labs Application",
+  "scripts": {
+    "start": "node backend/server.js",
+    "install-all": "npm run install-backend && npm run install-frontend",
+    "install-backend": "cd backend && npm install",
+    "install-frontend": "cd frontend && npm install",
+    "build": "cd frontend && npm run build",
+    "postinstall": "npm run install-all",
+    "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm run dev\""
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.0.1"
+  }
+}

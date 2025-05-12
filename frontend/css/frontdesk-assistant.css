@@ -1,0 +1,200 @@
+#recordButton {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: green;
+    border: none;
+    display: inline-block;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-size: 24px;
+    color: white;
+    margin-right: 10px;
+}
+
+#recordButton.recording {
+    background-color: red;
+}
+
+textarea {
+    width: 100%;
+    height: 200px;
+    margin-top: 10px;
+    resize: none;
+}
+
+/* Main container styling */
+.container {
+    display: flex;
+    gap: 20px;
+    padding: 10px 20px;
+    margin-top: 10px;
+}
+
+.video-container {
+    flex: 70;
+    height: 500px;
+    position: relative;
+    background-color: #f0f0f0;
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#default-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    background-color: #ffffff;
+}
+
+#youtube-video {
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 10px;
+    display: none;
+}
+
+.chat-section {
+    flex: 30;
+    display: flex;
+    flex-direction: column;
+}
+
+.mic-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+/* Adjust header margins */
+.main-header {
+    text-align: center;
+    font-size: 50px;
+    color: blue;
+    margin: 10px 0;
+}
+
+.sub-header {
+    text-align: center;
+    font-size: 40px;
+    margin: 10px 0;
+    opacity: 1;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.sub-header.fade {
+    opacity: 0;
+}
+
+/* Chat window styling */
+#chatHistory {
+    border: 1px solid #ccc;
+    height: 400px;
+    overflow-y: scroll;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+    font-family: Arial, sans-serif;
+}
+
+/* Common chat bubble styling */
+.message {
+    max-width: 80%;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 10px;
+    clear: both;
+    font-size: 20px;
+    line-height: 1.4;
+}
+
+/* User chat bubble */
+.userMessage {
+    background-color: #f0f8ff; /* Light blue */
+    color: #084298;
+    float: left;
+    margin-left: 0;
+    border-bottom-left-radius: 0;
+}
+
+/* Bot chat bubble */
+.botMessage {
+    background-color: #e2ffe1; /* Light green */
+    color: #155724;
+    float: right;
+    margin-right: 0;
+    border-bottom-right-radius: 0;
+}
+
+/* Clearfix to clear the float */
+.clearfix {
+    clear: both;
+}
+
+/* Toast Message Styling */
+#toastMessage {
+    visibility: hidden;
+    min-width: 250px;
+    margin-left: -125px;
+    background-color: #383636;
+    color: #fff;
+    text-align: center;
+    border-radius: 10px;
+    padding: 16px;
+    position: fixed;
+    z-index: 1;
+    left: 50%;
+    bottom: 30px;
+    font-size: 20px;
+    font-weight: bold;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+#toastMessage.show {
+    visibility: visible;
+    animation: fadeIn 0.5s, fadeOut 0.5s 2.5s;
+}
+
+@keyframes fadeIn {
+    from {opacity: 0;}
+    to {opacity: 1;}
+}
+
+@keyframes fadeOut {
+    from {opacity: 1;}
+    to {opacity: 0;}
+}
+
+/* Logout button styling */
+.logout-container {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+}
+
+.logout-container button {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+/* Status text styling */
+#status {
+    font-size: 25px;
+    font-weight: bold;
+    color: green;
+    display: inline;
+    margin: 0;
+}

@@ -1,0 +1,17 @@
+[Unit]
+Description=AI Language Labs Node.js Application
+After=network.target
+
+[Service]
+Type=forking
+User=www-data
+WorkingDirectory=/var/www/ai-language-labs/backend
+ExecStart=/usr/bin/pm2 start server.js --name "ai-language-labs" --env production
+ExecReload=/usr/bin/pm2 reload ai-language-labs
+ExecStop=/usr/bin/pm2 stop ai-language-labs
+Restart=on-failure
+Environment=PATH=/usr/bin:/usr/local/bin
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target

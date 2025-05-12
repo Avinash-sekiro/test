@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>API Request and Response with Audio Recording</title>
+        <script src="https://www.youtube.com/iframe_api"></script>
+        <style>
+            #recordButton {
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
+                background-color: green;
+                border: none;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                cursor: pointer;
+                font-size: 24px;
+                color: white;
+            }
+    
+            #recordButton.recording {
+                background-color: red;
+            }
+    
+            textarea {
+                width: 100%;
+                height: 200px;
+                margin-top: 10px;
+                resize: none;
+            }
+    
+            /* Main container styling */
+            .container {
+                display: flex;
+                gap: 20px;
+                padding: 10px 20px;
+                margin-top: 10px;
+            }
+
+            .video-container {
+                flex: 70;
+                height: 500px;
+                position: relative;
+                background-color: #f0f0f0;
+                border-radius: 10px;
+                overflow: hidden;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+
+            #default-image {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                display: block;
+                background-color: #ffffff;
+            }
+
+            #player {
+                width: 100%;
+                height: 100%;
+                border: none;
+                border-radius: 10px;
+                display: none;
+            }
+
+            .chat-section {
+                flex: 30;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .mic-controls {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-bottom: 10px;
+            }
+
+            /* Adjust header margins */
+            .main-header {
+                text-align: center;
+                font-size: 50px;
+                color: blue;
+                margin: 10px 0;
+            }
+
+            .sub-header {
+                text-align: center;
+                font-size: 40px;
+                margin: 10px 0;
+                opacity: 1;
+                transition: opacity 0.5s ease-in-out;
+            }
+
+            .sub-header.fade {
+                opacity: 0;
+            }
+
+            /* Chat window styling */
+            #chatHistory {
+                border: 1px solid #ccc;
+                height: 400px;
+                overflow-y: scroll;
+                padding: 10px;
+                background-color: #f9f9f9;
+                border-radius: 10px;
+                font-family: Arial, sans-serif;
+            }
+    
+            /* Common chat bubble styling */
+            .message {
+                max-width: 80%;
+                padding: 10px;
+                margin: 10px 0;
+                border-radius: 10px;
+                clear: both;
+                font-size: 20px;
+                line-height: 1.4;
+            }
+    
+            /* User chat bubble */
+            .userMessage {
+                background-color: #f0f8ff; /* Light blue */
+                color: #084298;
+                float: left;
+                margin-left: 0;
+                border-bottom-left-radius: 0;
+            }
+    
+            /* Bot chat bubble */
+            .botMessage {
+                background-color: #e2ffe1; /* Light green */
+                color: #155724;
+                float: right;
+                margin-right: 0;
+                border-bottom-right-radius: 0;
+            }
+    
+            /* Clearfix to clear the float */
+            .clearfix {
+                clear: both;
+            }
+
+            /* Toast Message Styling */
+            #toastMessage {
+                visibility: hidden;
+                min-width: 250px;
+                margin-left: -125px;
+                background-color: #383636;
+                color: #fff;
+                text-align: center;
+                border-radius: 10px;
+                padding: 16px;
+                position: fixed;
+                z-index: 1;
+                left: 50%;
+                bottom: 30px;
+                font-size: 20px;
+                font-weight: bold;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            }
+
+            #toastMessage.show {
+                visibility: visible;
+                animation: fadeIn 0.5s, fadeOut 0.5s 2.5s;
+            }
+
+            @keyframes fadeIn {
+                from {opacity: 0;}
+                to {opacity: 1;}
+            }
+
+            @keyframes fadeOut {
+                from {opacity: 1;}
+                to {opacity: 0;}
+            }
+            
+            /* Logout button styling */
+            #logoutButton {
+                position: absolute;
+                top: 20px;
+                right: 20px;
+                padding: 8px 15px;
+                background-color: #f44336;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 16px;
+                font-weight: bold;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                transition: background-color 0.3s;
+            }
+            
+            #logoutButton:hover {
+                background-color: #d32f2f;
+            }
+        </style>
+    </head>
+    <body>
+        <button id="logoutButton" onclick="logout()">Logout</button>
+        <h1 class="main-header" id="school-name">Loading School Name...</h1>
+        <h1 class="sub-header">AI - Front Desk Assistant</h1>
+    
+        <!-- Main container for video and chat -->
+        <div class="container">
+            <!-- Video container -->
+            <div class="video-container">
+                <img id="default-image" 
+                    src="" 
+                    alt="School"
+                    style="display: block; width: 100%; height: 100%; object-fit: contain; background-color: #ffffff;">
+                <div id="player" style="display: none; width: 100%; height: 100%; border: none; border-radius: 10px;"></div>
+            </div>
+
+            <!-- Chat section with mic controls -->
+            <div class="chat-section">
+                <!-- Record button for audio -->
+                <div class="mic-controls">
+                    <button id="recordButton" style="display: inline-block; margin-right: 10px;">
+                        🎤
+                    </button>
+                    <p id="status" style="font-size: 25px; font-weight: bold; color: green; display: inline; margin: 0;">Click to start conversation</p>
+                </div>
+
+                <!-- Chat container -->
+                <div class="chat-container">
+                    <div id="chatHistory" style="border: 1px solid #a0a0a0; height: 400px; overflow-y: scroll; padding: 10px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Message Container -->
+        <div id="toastMessage">Processing your Question. Please Wait.</div>
+
+    <script src="../js/config.js"></script>
+    <script src="../js/auth.js"></script>
+    <script>
+            // Check if user is authenticated and has assistant role
+            async function checkAssistantAuth() {
+                try {
+                    const user = await getCurrentUser();
+                    
+                    if (!user) {
+                        // Redirect to login page if not authenticated
+                        window.location.href = '../index.html';
+                        return false;
+                    }
+                    
+                    // Check if user has assistant role
+                    if (user.role !== 'assistant') {
+                        // Redirect to appropriate dashboard based on role
+                        if (user.role === 'admin') {
+                            window.location.href = 'admin-dashboard.html';
+                        } else if (user.role === 'schools') {
+                            window.location.href = 'school-dashboard.html';
+                        } else {
+                            // For other roles, redirect to index
+                            window.location.href = '../index.html';
+                        }
+                        return false;
+                    }
+                    
+                    // User is authenticated with correct role, continue loading the page
+                    console.log('User authenticated as assistant:', user.email);
+                    return true;
+                } catch (error) {
+                    console.error('Authentication error:', error);
+                    // Redirect to login page on error
+                    window.location.href = '../index.html';
+                    return false;
+                }
+            }
+
+            // Check authentication when page loads
+            window.addEventListener('load', async function() {
+                const isAuthenticated = await checkAssistantAuth();
+                if (isAuthenticated) {
+                    // Show default image while waiting for API response
+                    showDefaultImage();
+                    // Start the process to get the default video URL
+                    updateDefaultVideo();
+                    // Set up inactivity timer
+                    resetInactivityTimer();
+                    
+                    // Add event listeners to reset inactivity timer on user interaction
+                    const userInteractionEvents = ['mousedown', 'keydown', 'touchstart', 'scroll'];
+                    userInteractionEvents.forEach(eventType => {
+                        document.addEventListener(eventType, resetInactivityTimer);
+                    });
+                }
+            });
+
+            // Text animation for sub-header
+            const subHeader = document.querySelector('.sub-header');
+            const texts = ['AI - Front Desk Assistant', 'Press the Mic button to interact with me'];
+            let currentIndex = 0;
+
+            function toggleText() {
+                subHeader.classList.add('fade');
+                
+                setTimeout(() => {
+                    currentIndex = (currentIndex + 1) % texts.length;
+                    subHeader.textContent = texts[currentIndex];
+                    // Apply color based on the text content
+                    if (texts[currentIndex] === 'Press the Mic button to interact with me') {
+                        subHeader.style.color = 'green';
+                    } else {
+                        subHeader.style.color = 'black';
+                    }
+                    subHeader.classList.remove('fade');
+                }, 500);
+            }
+
+            // Start the text animation
+            setInterval(toggleText, 3000);
+
+            const recordButton = document.getElementById('recordButton');
+            const statusText = document.getElementById('status');
+            let mediaRecorder = null;
+            let audioContext = null;
+            let isRecording = false;
+        let audioChunks = [];
+        let lang_code = "en-IN";
+        let micStream = null;
+        let youtubePlayer = null; // Global variable to store YouTube player reference
+
+        // Initialize microphone access
+        async function initializeMicrophone() {
+            try {
+                micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                statusText.textContent = 'Click and start speaking';
+                recordButton.disabled = false;
+            } catch (error) {
+                console.error('Error accessing microphone:', error);
+                statusText.textContent = 'Error: Microphone access denied';
+                recordButton.disabled = true;
+            }
+        }
+
+        // Function to stop recording
+        async function stopRecording() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                isRecording = false;
+                recordButton.classList.remove('recording');
+                statusText.textContent = 'Processing...';
+            }
+        }
+
+        let inactivityTimer;
+        const INACTIVITY_TIMEOUT = 120000; // 2 minutes in milliseconds
+        let inactivityTimerActive = false; // Flag to track if the timer is active
+
+        let defaultVideoUrl = ''; // Will be populated from first API response
+        let videoAudioEnabled = false; // Global variable to track audio state
+        let firstResponseReceived = false; // Flag to track if we've received the first response
+
+        // Function to update default video URL
+        async function updateDefaultVideo() {
+            try {
+                const result = await sendTextToChatAPI('Home Page Youtube Link', true);
+                if (result && result.response && result.response.text) {
+                    const { url } = extractAndRemoveUrl(result.response.text);
+                    if (url && (url.includes('youtube.com') || url.includes('youtu.be'))) {
+                        defaultVideoUrl = url;
+                        // Ensure video is muted for default video
+                        videoAudioEnabled = false;
+                        console.log('Default video will be muted');
+                        // Update video using the new YouTube player approach
+                        updateYouTubeVideo(url);
+                        // Mark that we've received the first response
+                        firstResponseReceived = true;
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating default video:', error);
+            }
+        }
+
+        // Function to handle inactivity
+        function handleInactivity() {
+            if (defaultVideoUrl) {
+                console.log('Inactivity detected, showing default video:', defaultVideoUrl);
+                updateYouTubeVideo(defaultVideoUrl);
+            } else if (!firstResponseReceived) {
+                // If we haven't received a response yet, try to get one
+                console.log('No default video URL available, requesting one...');
+                updateDefaultVideo();
+            } else {
+                console.log('No default video URL available, showing default image');
+                showDefaultImage();
+            }
+            // Set the flag to false as the timer has been triggered
+            inactivityTimerActive = false;
+        }
+
+        // Function to reset inactivity timer
+        function resetInactivityTimer() {
+            // Only reset the timer if it's active
+            if (inactivityTimerActive) {
+                if (inactivityTimer) {
+                    clearTimeout(inactivityTimer);
+                }
+                inactivityTimer = setTimeout(handleInactivity, INACTIVITY_TIMEOUT);
+            }
+        }
+
+        // Add keyboard event listener for space bar
+        document.addEventListener('keydown', (event) => {
+            // Check if the pressed key is space bar and no text input is focused
+            if (event.code === 'Space' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+                event.preventDefault(); // Prevent page scrolling
+                recordButton.click(); // Simulate button click
+            }
+        });
+
+        recordButton.addEventListener('click', async () => {
+            if (!isRecording) {
+                try {
+                    // Activate the inactivity timer when recording starts
+                    inactivityTimerActive = true;
+                    // Reset inactivity timer when recording starts
+                    resetInactivityTimer();
+                    // Create new instances for each recording session
+                    mediaRecorder = new MediaRecorder(micStream);
+                    audioContext = new AudioContext();
+                    const analyser = audioContext.createAnalyser();
+                    const microphone = audioContext.createMediaStreamSource(micStream);
+                    microphone.connect(analyser);
+                    analyser.fftSize = 2048;
+
+                    // Reset audio chunks
+                    audioChunks = [];
+
+                    // Setup silence detection
+                    let silenceStart = 0;
+                    const SILENCE_THRESHOLD = 0.1;
+                    const SILENCE_DURATION = 2000;
+
+                    const checkAudioLevel = () => {
+                        if (!isRecording) return; // Stop checking if recording has been stopped manually
+
+                        const buffer = new Float32Array(analyser.fftSize);
+                        analyser.getFloatTimeDomainData(buffer);
+                        
+                        const rms = Math.sqrt(buffer.reduce((sum, x) => sum + x * x, 0) / buffer.length);
+                        
+                        if (rms < SILENCE_THRESHOLD) {
+                            if (!silenceStart) silenceStart = Date.now();
+                            if (Date.now() - silenceStart > SILENCE_DURATION) {
+                                stopRecording();
+                                return;
+                            }
+                        } else {
+                            silenceStart = 0;
+                        }
+                        
+                        if (isRecording) requestAnimationFrame(checkAudioLevel);
+                    };
+
+                    mediaRecorder.ondataavailable = event => {
+                        if (event.data.size > 0) {
+                            audioChunks.push(event.data);
+                        }
+                    };
+
+                    mediaRecorder.onstop = async () => {
+                        // Reset inactivity timer when recording stops
+                        resetInactivityTimer();
+                        // Only close audioContext if it exists and isn't already closed
+                        if (audioContext && audioContext.state !== 'closed') {
+                            await audioContext.close();
+                        }
+                        
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/mpeg' });
+                        const transcription = await sendAudioToTranscriptionAPI(audioBlob);
+                        
+                        // Don't add user message if transcription is empty
+                        if (transcription) {
+                            const userMessageDiv = document.createElement('div');
+                            userMessageDiv.classList.add('message', 'userMessage');
+                            userMessageDiv.textContent = "User: " + transcription;
+                            document.getElementById('chatHistory').appendChild(userMessageDiv);
+
+                            const clearDiv = document.createElement('div');
+                            clearDiv.classList.add('clearfix');
+                            document.getElementById('chatHistory').appendChild(clearDiv);
+                            
+                            // Scroll to the bottom of the chat window
+                            document.getElementById('chatHistory').scrollTop = document.getElementById('chatHistory').scrollHeight;
+                            
+                            // Send the transcription to the chat API
+                            sendTextToChatAPI(transcription);
+                        }
+                        
+                        statusText.textContent = 'Click and start speaking';
+                    };
+
+                    // Start recording
+                    mediaRecorder.start();
+                    recordButton.classList.add('recording');
+                    isRecording = true;
+                    statusText.textContent = 'Recording...';
+                    checkAudioLevel();
+                } catch (error) {
+                    console.error('Error starting recording:', error);
+                    statusText.textContent = 'Error starting recording';
+                    isRecording = false;
+                }
+            } else {
+                // Manual stop when clicking the button while recording
+                stopRecording();
+            }
+        });
+
+        // Mute YouTube video when the mic button is pressed
+        recordButton.addEventListener('click', () => {
+            if (typeof youtubePlayer !== 'undefined' && youtubePlayer) {
+                console.log('Muting YouTube video due to mic activation');
+                try {
+                    youtubePlayer.mute();
+                } catch (error) {
+                    console.error('Error muting YouTube video:', error);
+                }
+            }
+        });
+
+        // Initialize microphone when page loads
+        recordButton.disabled = true;
+        statusText.textContent = 'Requesting microphone access...';
+        initializeMicrophone();
+
+        let conv_hist = {
+            "messages": [ ]
+        };
+
+        let sys_prompt = "You are testing a primary school student for picture comprehension. your questions should be in 1 sentence only. Do not accept single word answers. The picture shown contains the following items, categorized as follows. You need to ask the student category-wise and make sure that the student covers all the points. The student's answers should be grammatically correct and in complete sentences.  If the student gives a short answer or a phrase, respond with a complete sentence that the student can repeat. proceed further only after student answers in a complete sentence. 1. Non Living things (category) a. There is a bench / wooden bench in the park. b. There is a slide. c. There is a bicycle. 2. Actions of People (category) a. Boy is playing on a slide. b. Girl is riding a bicycle. c. Parents are sitting on the bench. d. Parents are watching their kids play. 3. Living things (category) a. There are tall trees. b. There are flowers and grass on the ground. c. Birds are flying in the sky. 4. Weather (category) a. It's a bright sunny day.";
+
+        // Function to send audio for transcription
+        async function sendAudioToTranscriptionAPI(audioBlob) {
+            try {
+                // Create a FormData object
+                const formData = new FormData();
+                formData.append('file', audioBlob, 'recording.mp3'); // Changed from 'audio' to 'file' to match backend
+                
+                console.log('Sending audio blob to API');
+                showProcessingToast(); // Display toast message
+                
+                // Use our own backend API instead of direct Sarvam API call
+                const response = await fetch('/api/v1/sarvam/speech-to-text', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Transcription response:', data);
+                
+                hideProcessingToast(); // Hide toast message
+                
+                if (data && data.text) {
+                    console.log('Transcribed text:', data.text);
+                    
+                    // Set the detected language code if available
+                    if (data.language_code) {
+                        console.log('Detected language code:', data.language_code);
+                        // Store the language code in a global variable for later use
+                        lang_code = data.language_code;
+                    } else {
+                        // Default to English if no language code is detected
+                        lang_code = "en-IN";
+                    }
+                    
+                    return data.text;
+                } else {
+                    console.error('No text in response:', data);
+                    return '';
+                }
+            } catch (error) {
+                hideProcessingToast(); // Hide toast message on error
+                console.error('Error in speech-to-text:', error);
+                return '';
+            }
+        }
+
+        // Function to send the transcription to the chat API
+        async function sendTextToChatAPI(text, skipSpeech = false) {
+            if (!window.webhookUrl) {
+                console.error('Webhook URL not initialized');
+                return;
+            }
+            
+            const data = {
+                message: text
+            };
+
+            try {
+                showProcessingToast(); // Display toast message
+                console.log('Sending data to webhook:', JSON.stringify(data, null, 2));
+                const response = await fetch(window.webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                let result;
+                try {
+                    result = await response.json();
+                } catch (error) {
+                    throw new Error('Invalid JSON response from the server.');
+                }
+                
+                hideProcessingToast(); // Stop toast message
+
+                const botMessageDiv = document.createElement('div');
+                botMessageDiv.classList.add('message', 'botMessage');
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}\nResponse: ${JSON.stringify(result, null, 2)}`);
+                }
+
+                if (result.response && result.response.text) {
+                    const responseText = result.response.text;
+                    console.log('Response:', responseText);
+                    
+                    const cleanText = await processResponseAndUrls(responseText);
+                    
+                    // Reset inactivity timer when a response is received
+                    resetInactivityTimer();
+                    
+                    // Only speak if skipSpeech is false
+                    if (!skipSpeech) {
+                        // Update bot message with clean text only
+                        botMessageDiv.textContent = "AI Assistant: " + cleanText;
+                        document.getElementById('chatHistory').appendChild(botMessageDiv);
+
+                        // Clear floats
+                        const clearDiv = document.createElement('div');
+                        clearDiv.classList.add('clearfix');
+                        document.getElementById('chatHistory').appendChild(clearDiv);
+
+                        // Scroll to the bottom of the chat window
+                        document.getElementById('chatHistory').scrollTop = document.getElementById('chatHistory').scrollHeight;
+
+                        speakText(cleanText);
+                    }
+                } else {
+                    // If response doesn't match expected format, show the raw response
+                    botMessageDiv.textContent = `Response received (${result})`;
+                    document.getElementById('chatHistory').appendChild(botMessageDiv);
+
+                    // Clear floats
+                    const clearDiv = document.createElement('div');
+                    clearDiv.classList.add('clearfix');
+                    document.getElementById('chatHistory').appendChild(clearDiv);
+
+                    // Scroll to the bottom of the chat window
+                    document.getElementById('chatHistory').scrollTop = document.getElementById('chatHistory').scrollHeight;
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                // Create error message div
+                const errorDiv = document.createElement('div');
+                errorDiv.classList.add('message', 'botMessage');
+                errorDiv.textContent = 'Error: ' + error.message;
+                document.getElementById('chatHistory').appendChild(errorDiv);
+
+                // Clear floats
+                const clearDiv = document.createElement('div');
+                clearDiv.classList.add('clearfix');
+                document.getElementById('chatHistory').appendChild(clearDiv);
+
+                // Scroll to the bottom
+                document.getElementById('chatHistory').scrollTop = document.getElementById('chatHistory').scrollHeight;
+            }
+        }
+
+        // Function to extract YouTube video ID
+        function extractYouTubeId(url) {
+            if (!url) return null;
+            
+            console.log('Extracting YouTube ID from URL:', url);
+            
+            try {
+                // Remove any leading/trailing whitespace
+                url = url.trim();
+                
+                // Handle youtu.be URLs - Generic approach for all youtu.be formats
+                if (url.includes('youtu.be/')) {
+                    // Extract everything after youtu.be/ up to any query parameters or end of string
+                    const id = url.split('youtu.be/')[1].split(/[?&#]/)[0];
+                    console.log('Extracted ID from youtu.be URL:', id);
+                    return id;
+                }
+                
+                // Handle embed URLs
+                if (url.includes('/embed/')) {
+                    const id = url.split('/embed/')[1].split(/[?&#]/)[0];
+                    console.log('Extracted ID from embed URL:', id);
+                    return id;
+                }
+                
+                // Handle YouTube Shorts
+                if (url.includes('/shorts/')) {
+                    const shortsId = url.split('/shorts/')[1].split(/[?&#]/)[0];
+                    console.log('Extracted Shorts ID:', shortsId);
+                    return shortsId;
+                }
+                
+                // Handle youtube.com URLs
+                try {
+                    const urlObj = new URL(url);
+                    if (urlObj.hostname.includes('youtube.com')) {
+                        // Check for video ID in query parameter
+                        const videoId = urlObj.searchParams.get('v');
+                        if (videoId) {
+                            console.log('Extracted ID from youtube.com URL:', videoId);
+                            return videoId;
+                        }
+                        
+                        // Check for shorts in pathname
+                        if (urlObj.pathname.includes('/shorts/')) {
+                            const id = urlObj.pathname.split('/shorts/')[1].split(/[?&#]/)[0];
+                            console.log('Extracted ID from shorts pathname:', id);
+                            return id;
+                        }
+                        
+                        // Check for embed in pathname
+                        if (urlObj.pathname.includes('/embed/')) {
+                            const id = urlObj.pathname.split('/embed/')[1].split(/[?&#]/)[0];
+                            console.log('Extracted ID from embed pathname:', id);
+                            return id;
+                        }
+                    }
+                } catch (urlError) {
+                    console.error('Error parsing URL:', urlError);
+                }
+                
+                // Fallback regex approach for all YouTube URL formats
+                // This should catch any YouTube URL format
+                const patterns = [
+                    // youtu.be URLs
+                    /youtu\.be\/([^?&#]+)/i,
+                    // youtube.com/v/ID format
+                    /youtube\.com\/v\/([^?&#]+)/i,
+                    // youtube.com/embed/ID format
+                    /youtube\.com\/embed\/([^?&#]+)/i,
+                    // youtube.com/watch?v=ID format
+                    /youtube\.com\/watch\?v=([^?&#]+)/i,
+                    // youtube.com/shorts/ID format
+                    /youtube\.com\/shorts\/([^?&#]+)/i,
+                    // Any other format with /v/ or /vi/
+                    /\/v\/([^?&#]+)/i,
+                    /\/vi\/([^?&#]+)/i,
+                    // General pattern for any YouTube ID in a URL
+                    /([a-zA-Z0-9_-]{11})/i
+                ];
+                
+                for (const pattern of patterns) {
+                    const match = url.match(pattern);
+                    if (match && match[1]) {
+                        console.log(`Extracted ID using pattern ${pattern}:`, match[1]);
+                        return match[1];
+                    }
+                }
+                
+                console.warn('Could not extract YouTube ID from URL:', url);
+                return null;
+            } catch (error) {
+                console.error('Error extracting YouTube ID:', error);
+                return null;
+            }
+        }
+        
+        // Function to update YouTube video
+        function updateYouTubeVideo(url) {
+            // Define youtubePlayer if it doesn't exist
+            if (typeof youtubePlayer === 'undefined') {
+                window.youtubePlayer = null;
+            }
+            
+            try {
+                console.log('Updating YouTube video with URL:', url);
+                console.log('Video will be ' + (videoAudioEnabled ? 'UNMUTED' : 'MUTED') + ' based on current audio state');
+                
+                const videoId = extractYouTubeId(url);
+                console.log('Extracted video ID:', videoId);
+                
+                if (videoId) {
+                    const videoContainer = document.querySelector('.video-container');
+                    const defaultImage = document.getElementById('default-image');
+                    
+                    // Hide image
+                    defaultImage.style.display = 'none';
+                    
+                    // Make sure video container is visible
+                    videoContainer.style.display = 'block';
+                    
+                    // Clean up existing player if any
+                    if (youtubePlayer) {
+                        youtubePlayer.destroy();
+                    }
+                    
+                    // Create a div for the player if it doesn't exist
+                    let playerDiv = document.getElementById('player');
+                    if (!playerDiv) {
+                        playerDiv = document.createElement('div');
+                        playerDiv.id = 'player';
+                        videoContainer.appendChild(playerDiv);
+                    }
+                    
+                    // Show player div
+                    playerDiv.style.display = 'block';
+                    
+                    console.log('Setting video audio:', videoAudioEnabled ? 'unmuted' : 'muted');
+                    
+                    // Initialize YouTube player with API
+                    youtubePlayer = new YT.Player('player', {
+                        height: '100%',
+                        width: '100%',
+                        videoId: videoId,
+                        playerVars: {
+                            autoplay: 1,
+                            mute: 1, // Start muted to ensure autoplay works
+                            playsinline: 1,
+                            modestbranding: 1,
+                            controls: 1,
+                            rel: 0,
+                            fs: 1,
+                            iv_load_policy: 3,
+                            loop: 1,
+                            playlist: videoId
+                        },
+                        events: {
+                            'onReady': onPlayerReady,
+                            'onStateChange': onPlayerStateChange
+                        }
+                    });
+                    
+                    // For Shorts, adjust aspect ratio to vertical video
+                    if (url.includes('/shorts/')) {
+                        playerDiv.style.width = '56.25%'; // 9:16 aspect ratio for vertical video
+                        playerDiv.style.margin = '0 auto'; // Center the video
+                    } else {
+                        playerDiv.style.width = '100%';
+                        playerDiv.style.margin = '0';
+                    }
+                } else {
+                    console.error('No valid video ID found in URL:', url);
+                    showDefaultImage();
+                }
+            } catch (error) {
+                console.error('Error updating YouTube video:', error);
+                showDefaultImage();
+            }
+        }
+        
+        // YouTube player event handlers
+        function onPlayerReady(event) {
+            console.log('YouTube player ready');
+            
+            // Store the player instance for future reference
+            if (typeof youtubePlayer === 'undefined') {
+                window.youtubePlayer = event.target;
+            }
+            
+            event.target.playVideo();
+            
+            // Handle audio based on videoAudioEnabled
+            if (videoAudioEnabled) {
+                console.log('Unmuting video');
+                event.target.unMute();
+                event.target.setVolume(100);
+            } else {
+                console.log('Keeping video muted');
+                event.target.mute();
+            }
+        }
+        
+        function onPlayerStateChange(event) {
+            // Handle player state changes if needed
+            console.log('Player state changed:', event.data);
+        }
+        
+        // Function to show default image
+        function showDefaultImage() {
+            const defaultImage = document.getElementById('default-image');
+            const playerDiv = document.getElementById('player');
+            
+            // Clean up YouTube player
+            if (typeof youtubePlayer !== 'undefined' && youtubePlayer) {
+                try {
+                    youtubePlayer.destroy();
+                } catch (error) {
+                    console.error('Error destroying YouTube player:', error);
+                }
+                window.youtubePlayer = null;
+            }
+            
+            // Hide player div if it exists
+            if (playerDiv) {
+                playerDiv.style.display = 'none';
+            }
+            
+            // Show default image
+            defaultImage.style.display = 'block';
+        }
+
+        // Function to convert Google Drive URL to direct image URL
+        function getDirectImageUrl(url) {
+            if (!url) return '';
+            
+            // Check if it's a Google Drive URL
+            if (url.includes('drive.google.com')) {
+                // Extract file ID from different Google Drive URL formats
+                let fileId = '';
+                if (url.includes('/file/d/')) {
+                    fileId = url.split('/file/d/')[1].split('/')[0];
+                } else if (url.includes('?id=')) {
+                    fileId = url.split('?id=')[1].split('&')[0];
+                }
+                
+                if (fileId) {
+                    // Return the direct viewing URL with additional parameters
+                    return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+                }
+            }
+            
+            // Return the original URL if it's not a Google Drive URL
+            return url;
+        }
+
+        // Function to update image source
+        function updateImageSource(element, url) {
+            if (!url) return;
+            
+            // If it's a googleusercontent URL, use it directly
+            if (url.includes('googleusercontent.com')) {
+                element.src = url;
+                element.style.display = 'block';
+                return;
+            }
+
+            const directUrl = getDirectImageUrl(url);
+            
+            // Create a new image object to test loading
+            const testImage = new Image();
+            testImage.onload = function() {
+                element.src = directUrl;
+                element.style.display = 'block';
+            };
+            
+            testImage.onerror = function() {
+                console.error('Error loading image:', directUrl);
+                // If Google Drive thumbnail fails, try the export=view method
+                if (url.includes('drive.google.com')) {
+                    const fileId = url.includes('/file/d/') ? 
+                        url.split('/file/d/')[1].split('/')[0] : 
+                        url.split('?id=')[1].split('&')[0];
+                    const alternateUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+                    element.src = alternateUrl;
+                    element.style.display = 'block';
+                    
+                    // Add final error handler
+                    element.onerror = function() {
+                        console.error('Failed to load image with both methods:', url);
+                        element.style.display = 'none';
+                    };
+                } else {
+                    element.style.display = 'none';
+                }
+            };
+            
+            // Start loading test image
+            testImage.src = directUrl;
+        }
+
+        // Function to update media container based on type
+        function updateMediaContainer(url, type) {
+            if (!url || !type) {
+                console.log('Missing URL or type, not updating media container');
+                return;
+            }
+            
+            console.log('Updating media container:', { url, type });
+            console.log('Current audio state:', videoAudioEnabled ? 'unmuted' : 'muted');
+            
+            const videoContainer = document.querySelector('.video-container');
+            const defaultImage = document.getElementById('default-image');
+            const playerDiv = document.getElementById('player');
+            
+            // Hide both elements initially
+            defaultImage.style.display = 'none';
+            if (playerDiv) {
+                playerDiv.style.display = 'none';
+            }
+            
+            if (type === 'image') {
+                console.log('Setting up image display');
+                // Stop YouTube video if it's playing
+                if (typeof youtubePlayer !== 'undefined' && youtubePlayer) {
+                    console.log('Stopping YouTube video before showing image');
+                    try {
+                        youtubePlayer.stopVideo();
+                    } catch (error) {
+                        console.error('Error stopping YouTube video:', error);
+                    }
+                }
+                updateImageSource(defaultImage, url);
+                // No need to clear player as it will be recreated when needed
+            } else if (type === 'video') {
+                console.log('Setting up video display');
+                defaultImage.src = ''; // Clear image source
+                // Preserve the current videoAudioEnabled setting
+                const currentAudioState = videoAudioEnabled;
+                updateYouTubeVideo(url);
+                // Restore audio state in case it was changed
+                videoAudioEnabled = currentAudioState;
+                console.log('Audio state after update:', videoAudioEnabled ? 'unmuted' : 'muted');
+            }
+        }
+
+        // Function to extract and remove URL and type from text
+        function extractAndRemoveUrl(text) {
+            try {
+                console.log('Processing text for URL extraction:', text);
+                
+                // Initialize result object
+                let result = {
+                    cleanText: text
+                };
+                
+                // Extract URL and type using regex - handle multiline and more flexible patterns
+                const urlMatch = text.match(/url\s*:\s*(https?:\/\/[^\s\n]+|no url)/i);
+                const typeMatch = text.match(/type\s*:\s*(\w+)/i);
+                
+                console.log('URL match:', urlMatch);
+                console.log('Type match:', typeMatch);
+                
+                if (urlMatch) {
+                    const urlValue = urlMatch[1].trim();
+                    // Only set URL if it's not "no url"
+                    if (urlValue !== 'no url') {
+                        result.url = urlValue;
+                    }
+                    // Remove the URL line from text
+                    result.cleanText = result.cleanText.replace(/url\s*:\s*.*?(?:\n|$)/i, '');
+                }
+                
+                if (typeMatch) {
+                    const typeValue = typeMatch[1].trim();
+                    // Only set type if it's not "null"
+                    if (typeValue !== 'null') {
+                        result.type = typeValue.toLowerCase();
+                    }
+                    // Remove the type line from text
+                    result.cleanText = result.cleanText.replace(/type\s*:\s*.*?(?:\n|$)/i, '');
+                }
+                
+                // Clean up any extra whitespace and "response:" prefix
+                result.cleanText = result.cleanText
+                    .replace(/^response\s*:\s*/i, '')
+                    .trim();
+                
+                console.log('Extracted result:', result);
+                return result;
+            } catch (error) {
+                console.error('Error extracting URL and type:', error);
+                return { cleanText: text };
+            }
+        }
+
+        // Function to process response and handle media
+        async function processResponseAndUrls(text) {
+            console.log('Processing response:', text);
+            
+            // Remove "Original response:" prefix if present
+            text = text.replace(/^Original response:\s*/i, '');
+            
+            // Remove "response:" prefix if present
+            text = text.replace(/^response:\s*/i, '');
+            
+            // Reset audio state to default (muted)
+            videoAudioEnabled = false;
+            
+            // Check for audio setting
+            const audioMatch = text.match(/audio\s*:\s*(\w+)/i);
+            if (audioMatch) {
+                const audioSetting = audioMatch[1].trim().toLowerCase();
+                console.log('Audio setting found:', audioSetting);
+                
+                // Set the audio state based on the setting
+                videoAudioEnabled = (audioSetting === 'unmute');
+                console.log('Video audio enabled:', videoAudioEnabled);
+                
+                // Remove the audio setting from the text
+                text = text.replace(/audio\s*:\s*\w+/i, '').trim();
+            }
+            
+            // Use the standard extraction method only
+            const extractedData = extractAndRemoveUrl(text);
+            console.log('Extracted data using standard method:', extractedData);
+            
+            // Update media container if URL and type are present
+            if (extractedData.url && extractedData.type) {
+                updateMediaContainer(extractedData.url, extractedData.type);
+            }
+            
+            return extractedData.cleanText || text;
+        }
+
+        async function handleBotResponse(result) {
+            try {
+                if (result && result.response && result.response.text) {
+                    const responseText = result.response.text;
+                    console.log('Response:', responseText);
+                    
+                    const cleanText = await processResponseAndUrls(responseText);
+                    console.log('Final clean text:', cleanText);
+                    
+                    // Update bot message with clean text only
+                    const botMessageDiv = document.getElementById('bot-message');
+                    botMessageDiv.textContent = "AI Assistant: " + cleanText;
+                    
+                    // Speak clean text without URL
+                    speakText(cleanText);
+                } else {
+                    console.error('Invalid response format:', result);
+                }
+            } catch (error) {
+                console.error('Error handling bot response:', error);
+            }
+        }
+
+        async function translateText(inputText,tar_lang_code) {
+            // Input validation
+            if (!inputText) {
+                throw new Error('Input text is required');
+            }
+
+            const options = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    inputText: inputText,
+                    targetLanguageCode: tar_lang_code
+                })
+            };
+
+            try {
+                const response = await fetch('/api/v1/sarvam/translate', options);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result && result.translated_text) {
+                    return result.translated_text;
+                } else {
+                    throw new Error('No translated text in response');
+                }
+            } catch (error) {
+                console.error('Error translating text:', error);
+                throw error;
+            }
+        }
+
+        async function speakText(text) {
+            // Wait for voices to load
+            if (speechSynthesis.getVoices().length === 0) {
+                await new Promise(resolve => {
+                    speechSynthesis.addEventListener('voiceschanged', resolve, { once: true });
+                });
+            }
+
+            let speech = new SpeechSynthesisUtterance();
+            const voices = speechSynthesis.getVoices();
+            
+            // Debug log available voices
+            //console.log("Available voices:", voices.map(v => `${v.name} (${v.lang})`));
+
+            // Translate text if needed
+            if (lang_code !== "en-IN") {
+                try {
+                    speech.text = await translateText(text, lang_code);
+                } catch (error) {
+                    console.error('Translation error:', error);
+                    speech.text = text;
+                }
+            } else {
+                speech.text = text;
+            }
+
+            // Define exact voice names
+            const voiceMap = {
+                'hi-IN': 'Microsoft Swara Online (Natural) - Hindi (India)',
+                'kn-IN': 'Microsoft Sapna Online (Natural) - Kannada (India)',
+                'en-IN': 'Microsoft Neerja Online (Natural) - English (India) (Preview)'
+            };
+
+            // Select voice using exact name matching
+            let selectedVoice = voices.find(voice => voice.name === voiceMap[lang_code]);
+            
+            if (!selectedVoice) {
+                console.warn(`Exact voice not found for ${lang_code}, trying language match`);
+                selectedVoice = voices.find(voice => voice.lang.startsWith(lang_code));
+            }
+
+            if (!selectedVoice) {
+                console.error(`No voice found for ${lang_code}, falling back to default`);
+                selectedVoice = voices[0];
+            }
+
+            speech.voice = selectedVoice;
+            speech.lang = lang_code;
+            speech.rate = 1;
+
+            console.log(`Selected voice: ${speech.voice?.name}, language: ${speech.lang}`);
+            window.speechSynthesis.speak(speech);
+        }
+
+        // Toast Message Functions
+        function showProcessingToast() {
+            const toast = document.getElementById('toastMessage');
+            toast.className = 'show';
+        }
+
+        function hideProcessingToast() {
+            const toast = document.getElementById('toastMessage');
+            toast.className = toast.className.replace('show', '');
+        }
+
+        // Logout function
+        function logout() {
+            if (confirm("Are you sure you want to logout?")) {
+                // Use the logoutUser function from auth.js
+                logoutUser().then(() => {
+                    // Redirect to login page
+                    window.location.href = "../index.html";
+                }).catch(error => {
+                    console.error('Logout error:', error);
+                    // Still redirect even if there's an error
+                    window.location.href = "../index.html";
+                });
+            }
+        }
+
+        // Load voices asynchronously
+        window.speechSynthesis.onvoiceschanged = () => {
+            // This ensures voices are loaded before speaking
+        };
+
+        // Get current user data and update UI
+        async function initializeUI() {
+            try {
+                const userData = JSON.parse(localStorage.getItem('user'));
+                if (userData && userData.display_name) {
+                    document.getElementById('school-name').textContent = userData.display_name;
+                }
+                if (userData && userData.n8n_link) {
+                    window.webhookUrl = userData.n8n_link;
+                } else {
+                    console.error('N8N webhook URL not found in user data');
+                }
+            } catch (error) {
+                console.error('Error initializing UI:', error);
+            }
+        }
+
+        // Call initializeUI when the page loads
+        document.addEventListener('DOMContentLoaded', initializeUI);
+    </script>
+</body>
+</html>

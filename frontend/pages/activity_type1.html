@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Supabase Swiper Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=5" />
+  <!-- Swiper CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <!-- Combined CSS for activity type 1 -->
+  <link rel="stylesheet" href="../css/activity_type1.css">
+  <!-- Student Roster CSS -->
+  <link rel="stylesheet" href="../css/student-roster.css">
+  <!-- Font Awesome CSS for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <!-- Auth Check Script - automatically redirects if not authenticated -->
+  <script src="../js/auth-check.js"></script>
+  <!-- Session Handler for maintaining login state -->
+  <script src="../js/session-handler.js"></script>
+  <!-- Supabase JS for authentication -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Auth and User Profile Scripts -->
+  <script src="../js/auth.js"></script>
+  <script src="../js/user-profile.js"></script>
+  <!-- Session Manager for tab closing and inactivity logout -->
+  <script src="../js/session-manager.js"></script>
+  <!-- Chat Module -->
+  <script src="../js/chat-module.js"></script>
+  <!-- Student Roster Module -->
+  <script src="../js/student-roster.js"></script>
+  
+  <style>
+    /* Adjust main content width to accommodate the student roster */
+    .container {
+      padding-right: 300px; /* Space for student roster */
+      transition: padding-right 0.3s ease;
+    }
+    
+    @media (max-width: 768px) {
+      .container {
+        padding-right: 0;
+      }
+    }
+    
+    .container.roster-collapsed {
+      padding-right: 40px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <!-- Sidebar will be dynamically loaded here -->
+    <div class="main-content">
+      <div class="left-section">
+        <div class="swiper-container">
+          <!-- Swiper -->
+          <div class="swiper mySwiper">
+            <div class="swiper-wrapper" id="swiper-wrapper">
+              <!-- Slides will be dynamically loaded from Supabase -->
+              <div class="swiper-slide loading-slide">
+                <div class="loading-indicator">Loading slides...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Common Inputs Container with tabs and mic input -->
+        <div class="common-inputs-container">
+          <div class="input-row">
+            <div class="left-column" style="display: flex; justify-content: center; align-items: center;">
+              <div class="button-container" style="margin: 0 auto; padding-top: 26px; padding-bottom: 18px;">
+                <button id="cancelButton" class="hidden"><i class="fa fa-times"></i></button>
+                <button id="recordButton" class="mic-pulse"><i class="fa fa-microphone"></i></button>
+                <button id="replayButton">Q</button>
+                <button id="alphabetButton">A</button>
+              </div>
+            </div>
+            <div class="right-column">
+              <div id="mic-textbox"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-section" id="chat-section" style="padding-top: 0;">
+          <h3 id="chat-header" style="text-align: center; font-weight: bold; color: #00008B; margin: 0; padding: 6px 0; background-color: rgba(0, 123, 255, 0.2); width: 100%; position: relative; left: -20px; top: -2px; padding-left: 20px; padding-right: 20px; width: calc(100% + 40px);"></h3>
+          <div id="chatHistory" style="margin-top: 10px;">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toggle-buttons">
+    <button id="sidebar-toggle" onclick="window.location.href='class-activities.html'"><i class="fa fa-home"></i></button>
+    <button id="chat-toggle">💬</button>
+    <button id="instructions-toggle">📝</button>
+    <button id="students-toggle" title="Toggle Student Roster"><i class="fa fa-users"></i></button>
+    <button id="logout-button"><i class="fa fa-sign-out"></i></button>
+  </div>
+  
+  <!-- Instructions Modal -->
+  <div id="instructions-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal">&times;</span>
+      <h2 id="instructions-title">Activity Instructions</h2>
+      <!-- Image container for instruction image -->
+      <div id="instructions-image-container" style="text-align: center; margin: 15px 0;">
+        <img id="instructions-image" style="max-width: 100%; max-height: 300px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.15);" src="" alt="Activity instructions image" />
+      </div>
+      <div id="instructions-description"></div>
+      <div id="instructions-actions">
+        <button id="start-activity-btn" class="start-activity-modal-btn">
+          <i class="fa fa-play-circle"></i> Start Activity
+        </button>
+        <button id="main-menu-btn" class="main-menu-btn" onclick="window.location.href='class-activities.html'">
+          <i class="fa fa-home"></i> Back to Main Menu
+        </button>
+        <button id="play-instructions-audio" class="audio-btn">
+          <i class="fa fa-volume-up"></i>
+        </button>
+        <audio id="instructions-audio" src=""></audio>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast">Notification</div>
+  
+  <!-- Logout Confirmation Modal -->
+  <div id="logout-confirm-modal" class="modal">
+    <div class="modal-content" style="max-width: 400px;">
+      <span class="close-modal" id="close-logout-modal">&times;</span>
+      <h2 style="color: #333; text-align: center;">Confirm Logout</h2>
+      <p style="text-align: center; margin: 20px 0;">Are you sure you want to log out?</p>
+      <div style="display: flex; justify-content: center; gap: 15px;">
+        <button id="confirm-logout-btn" class="start-activity-modal-btn" style="background-color: #d9534f;">
+          <i class="fa fa-sign-out"></i> Yes, Log Out
+        </button>
+        <button id="cancel-logout-btn" class="start-activity-modal-btn" style="background-color: #5bc0de;">
+          <i class="fa fa-times"></i> Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Swiper JS -->
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+  <script>
+    // Right-click is now enabled
+    
+    // Disable keyboard shortcuts that could be used to view source
+    document.addEventListener('keydown', function(event) {
+      // Disable F12 key
+      if(event.keyCode == 123) {
+        event.preventDefault();
+        return false;
+      }
+      // Disable Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U (Chrome, Firefox)
+      if (event.ctrlKey && 
+          (event.shiftKey && (event.keyCode == 73 || event.keyCode == 74) || 
+           event.keyCode == 85)) {
+        event.preventDefault();
+        return false;
+      }
+    });
+    
+    // Initialize variables
+    let currentSlide = 0;
+    let currentTopic = 0;
+    let slidesCount = 0; // Will be updated from Supabase
+    let isBlurred = true;
+    let isRecording = false;
+    let isRecordingCancelled = false;
+    let audioChunks = [];
+    let mediaRecorder;
+    let currentSlideIndex = 0; // Track current slide index
+    
+    // IMPORTANT: Base URL for API calls
+    // Use a relative URL to avoid CORS issues and ensure it works in all environments
+    // This approach will work regardless of the server domain or port
+    // The correct API path is determined by your server.js route configuration
+    const API_PATH = '/api/v1/activity-images';
+    
+    // Global variable to store user's audio URL
+    window.userAudioUrl = '';
+    
+    // Initialize Supabase client
+    const SUPABASE_URL = 'https://zmubswgdqfmleajkccqk.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptdWJzd2dkcWZtbGVhamtjY3FrIiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODIzMzczMTcsImV4cCI6MTk5NzkxMzMxN30.QeJcCnAYQeYE5pIJU9CkgqlF9QNtTNjQNX3aRaW_zPE';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    // No need for storage configuration as full URLs are stored in the database
+    
+    // DOM Elements
+    const swiperWrapper = document.getElementById('swiper-wrapper');
+    const micTextbox = document.getElementById('mic-textbox');
+    const recordButton = document.getElementById('recordButton');
+    const cancelButton = document.getElementById('cancelButton');
+    const replayButton = document.getElementById('replayButton');
+    const alphabetButton = document.getElementById('alphabetButton');
+    const chatToggle = document.getElementById('chat-toggle');
+    const chatSection = document.getElementById('chat-section');
+    const instructionsToggle = document.getElementById('instructions-toggle');
+    const instructionsModal = document.getElementById('instructions-modal');
+    const closeModalBtn = document.querySelector('#instructions-modal .close-modal');
+    const closeModal = document.querySelector('.close-modal');
+    const instructionsTitle = document.getElementById('instructions-title');
+    // Image element reference removed
+    const instructionsDescription = document.getElementById('instructions-description');
+    const startActivityBtn = document.getElementById('start-activity-btn');
+    const playInstructionsAudio = document.getElementById('play-instructions-audio');
+    const instructionsAudio = document.getElementById('instructions-audio');
+    
+    // Initialize Swiper
+    let swiper = null;
+    
+    // Make sure we know what API path we're using
+    console.log('Using API path:', API_PATH);
+    
+    function initializeSwiper() {
+      console.log('Initializing Swiper...');
+      swiper = new Swiper(".mySwiper", {
+        effect: "coverflow",
+        grabCursor: true,
+        centeredSlides: true,
+        slidesPerView: "auto",
+        speed: 1000,
+        coverflowEffect: {
+          rotate: 50,
+          stretch: 0,
+          depth: 100,
+          modifier: 1,
+          slideShadows: true,
+        },
+        on: {
+          slideChange: function () {
+            currentSlide = this.activeIndex;
+            currentTopic = 0;
+            
+            // Update currentSlideIndex for webhook integration
+            currentSlideIndex = this.activeIndex;
+            
+            // Clear mic-textbox when switching slides
+            micTextbox.innerHTML = '';
+            
+            // Pause all videos if any
+            document.querySelectorAll('.slide-video').forEach(video => {
+              video.pause();
+              video.currentTime = 0;
+            });
+            
+            // Play video in active slide if it's a video
+            const activeSlide = this.slides[this.activeIndex];
+            const activeVideo = activeSlide.querySelector('.slide-video');
+            if (activeVideo) {
+              activeVideo.play();
+            }
+            
+            console.log(`Slide changed to index: ${currentSlide} (currentSlideIndex: ${currentSlideIndex})`);
+          }
+        }
+      });
+    }
+    
+    // Function to get activity images from the backend API
+    async function getActivityImages() {
+      try {
+        // Use the API_BASE_URL we defined at the top of the script
+        // Use a relative path to access the API
+        const response = await fetch(API_PATH);
+        console.log('Activity images API URL:', API_PATH);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch activity images');
+        }
+        
+        return await response.json();
+      } catch (error) {
+        throw error;
+      }
+    }
+    
+    // Function to fetch slides and display them
+    async function fetchSlides() {
+      try {
+        // Show loading state
+        swiperWrapper.innerHTML = `
+          <div class="swiper-slide loading-slide">
+            <div class="loading-indicator">Loading slides...</div>
+          </div>
+        `;
+        
+        // Get activity images either from API or fallback
+        const activityImages = await getActivityImages();
+        
+        if (!activityImages || activityImages.length === 0) {
+          console.error('No activity images found');
+          showToast('No activity images found');
+          return;
+        }
+        
+        slidesCount = activityImages.length;
+        
+        // Clear loading slide
+        swiperWrapper.innerHTML = '';
+        
+        // Create slides based on activity images
+        activityImages.forEach(activity => {
+          const slideElement = document.createElement('div');
+          slideElement.className = 'swiper-slide';
+          
+          // Use the full URL directly from the database
+          const imageUrl = activity.image_path;
+          console.log('Loading image from:', imageUrl);
+          
+          if (activity.type === 'image') {
+            slideElement.innerHTML = `
+              <img src="${imageUrl}" alt="${activity.title}" />
+              <div class="slide-caption">${activity.title}</div>
+            `;
+          } else if (activity.type === 'video') {
+            slideElement.innerHTML = `
+              <div class="video-container">
+                <video class="slide-video" playsinline preload="auto" loop muted>
+                  <source src="${imageUrl}" type="video/mp4">
+                  Your browser does not support the video tag.
+                </video>
+                <div class="video-controls">
+                  <button class="play-pause-btn"><i class="fa fa-play"></i></button>
+                </div>
+              </div>
+              <div class="slide-caption">${activity.title}</div>
+            `;
+            
+            // Add event listeners after the slide is added to the DOM
+            setTimeout(() => {
+              const video = slideElement.querySelector('video');
+              const playPauseBtn = slideElement.querySelector('.play-pause-btn');
+              
+              // Auto-play when slide becomes active
+              video.play();
+              
+              // Play/Pause button functionality
+              playPauseBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (video.paused) {
+                  video.play();
+                  playPauseBtn.innerHTML = '<i class="fa fa-pause"></i>';
+                } else {
+                  video.pause();
+                  playPauseBtn.innerHTML = '<i class="fa fa-play"></i>';
+                }
+              });
+              
+              // Keep videos muted by default
+              video.muted = true;
+              
+              // Update play/pause button state when video state changes
+              video.addEventListener('play', () => {
+                playPauseBtn.innerHTML = '<i class="fa fa-pause"></i>';
+              });
+              
+              video.addEventListener('pause', () => {
+                playPauseBtn.innerHTML = '<i class="fa fa-play"></i>';
+              });
+            }, 100);
+          }
+          
+          swiperWrapper.appendChild(slideElement);
+        });
+        
+        // Initialize swiper after adding slides
+        initializeSwiper();
+        
+        showToast(`Loaded ${slidesCount} activity images`);
+      } catch (error) {
+        console.error('Error loading slides:', error);
+        showToast('Failed to load activity images');
+        
+        // Show error state
+        swiperWrapper.innerHTML = `
+          <div class="swiper-slide loading-slide">
+            <div class="loading-indicator error">Error loading slides. Please try again.</div>
+          </div>
+        `;
+      }
+    }
+    
+    // Function to show toast message
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = 'show';
+      setTimeout(() => {
+        toast.className = toast.className.replace('show', '');
+      }, 3000);
+    }
+    
+    // Initialize the chat module
+    ChatModule.init();
+    
+    // Check if user is logged in and redirect if not
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        // Initialize session manager for tab closing and inactivity logout
+        if (window.sessionManager) {
+          window.sessionManager.init();
+          console.log('Session manager initialized');
+        }
+        
+        // First check if user is logged in
+        if (!window.userProfile.isUserLoggedIn()) {
+          console.log('User not logged in, redirecting to login page');
+          window.location.href = '../index.html';
+          return;
+        }
+        
+        // Add toggle functionality for student roster
+        document.getElementById('students-toggle').addEventListener('click', function() {
+          if (window.studentRoster) {
+            window.studentRoster.toggleRoster();
+            
+            // Toggle padding on container
+            const container = document.querySelector('.container');
+            if (container.classList.contains('roster-collapsed')) {
+              container.classList.remove('roster-collapsed');
+            } else {
+              container.classList.add('roster-collapsed');
+            }
+          }
+        });
+        
+        let profile;
+        try {
+          // Try to fetch profile data but don't fail if it doesn't work
+          profile = await window.userProfile.fetchUserProfile();
+          console.log('User profile data loaded:', profile);
+          
+          // Set the display name as the chat header if available
+          if (profile && profile.display_name) {
+            const chatHeader = document.getElementById('chat-header');
+            if (chatHeader) {
+              chatHeader.textContent = profile.display_name;
+              console.log('Set chat header to display name:', profile.display_name);
+            }
+          }
+          
+          // If this is a school user, check for audio URL
+          if (profile && profile.role === 'schools' && profile.audio_url) {
+            console.log('School user has audio URL:', profile.audio_url);
+            // We could use this audio URL for specific school customizations
+            
+            // If we have an audio URL from the user profile, use it for instructions
+            if (profile.audio_url && instructionsAudio) {
+              console.log('Setting default audio URL from user profile:', profile.audio_url);
+              // Store the audio URL in a global variable for later use
+              window.userAudioUrl = profile.audio_url;
+              // Set the audio source if available
+              instructionsAudio.src = profile.audio_url;
+              // Make the audio button visible
+              playInstructionsAudio.style.display = 'flex';
+            }
+          }
+        } catch (profileError) {
+          console.warn('Could not fetch user profile, continuing anyway:', profileError);
+          // Continue without profile data
+        }
+      } catch (error) {
+        console.warn('Could not fetch user profile:', error);
+        // Continue without profile data
+      }
+    });
+    
+    // Instructions functionality
+    instructionsToggle.addEventListener('click', () => {
+      console.log('Instructions button clicked');
+      fetchInstructions()
+        .then(() => {
+          // Show the modal after successfully fetching instructions
+          console.log('Showing instructions modal');
+          instructionsModal.style.display = 'block';
+        })
+        .catch(error => {
+          console.error('Failed to show instructions modal:', error);
+          showToast('Failed to load instructions');
+        });
+    });
+    
+    // Close modal when clicking the X button
+    closeModalBtn.addEventListener('click', () => {
+      console.log('Closing instructions modal');
+      instructionsModal.style.display = 'none';
+      
+      // Stop audio if playing
+      if (instructionsAudio) {
+        instructionsAudio.pause();
+        instructionsAudio.currentTime = 0;
+        playInstructionsAudio.classList.remove('playing');
+      }
+    });
+    
+    // Close modal when clicking outside of it
+    window.addEventListener('click', (event) => {
+      if (event.target === instructionsModal) {
+        instructionsModal.style.display = 'none';
+        
+        // Stop audio if playing
+        if (instructionsAudio) {
+          instructionsAudio.pause();
+          instructionsAudio.currentTime = 0;
+          playInstructionsAudio.classList.remove('playing');
+        }
+      }
+    });
+    
+    // Close modal when clicking the X
+    closeModal.addEventListener('click', () => {
+      instructionsModal.style.display = 'none';
+      // Stop audio if playing
+      instructionsAudio.pause();
+      instructionsAudio.currentTime = 0;
+      playInstructionsAudio.classList.remove('playing');
+    });
+    
+    // Close modal when clicking outside of it
+    window.addEventListener('click', (event) => {
+      if (event.target === instructionsModal) {
+        instructionsModal.style.display = 'none';
+        // Stop audio if playing
+        instructionsAudio.pause();
+        instructionsAudio.currentTime = 0;
+        playInstructionsAudio.classList.remove('playing');
+      }
+    });
+    
+    // Play/pause audio when clicking the audio button
+    playInstructionsAudio.addEventListener('click', () => {
+      if (instructionsAudio.paused) {
+        instructionsAudio.play();
+        playInstructionsAudio.classList.add('playing');
+      } else {
+        instructionsAudio.pause();
+        instructionsAudio.currentTime = 0;
+        playInstructionsAudio.classList.remove('playing');
+      }
+    });
+    
+    // Start Activity button functionality
+    startActivityBtn.addEventListener('click', () => {
+      // Close the modal
+      instructionsModal.style.display = 'none';
+      
+      // Any additional actions to start the activity
+      showToast('Starting activity...');
+      
+      // Now fetch and display the slides
+      fetchSlides();
+      
+      // Stop audio if playing
+      instructionsAudio.pause();
+      instructionsAudio.currentTime = 0;
+      playInstructionsAudio.classList.remove('playing');
+    });
+    
+    // Handle audio completion
+    instructionsAudio.addEventListener('ended', () => {
+      playInstructionsAudio.classList.remove('playing');
+      instructionsAudio.currentTime = 0;
+    });
+    
+    // Function to fetch and display instructions
+    async function fetchInstructions() {
+      try {
+        console.log('Fetching instructions...');
+        showToast('Loading instructions...');
+        
+        // Get user display name if available
+        const displayName = window.userProfile.getUserDisplayName();
+        const userRole = window.userProfile.getUserRole();
+        
+        let data;
+        
+        try {
+          // Try to fetch from backend first
+          const instructionsEndpoint = `${API_PATH}/instructions`;
+          console.log('Instruction API URL:', instructionsEndpoint);
+          const response = await fetch(instructionsEndpoint);
+          
+          if (response.ok) {
+            data = await response.json();
+            console.log('Successfully loaded instructions from API:', data);
+          } else {
+            console.warn(`API returned ${response.status}, using fallback data`);
+            throw new Error('API error');
+          }
+        } catch (apiError) {
+          console.warn('Failed to fetch from API, using hardcoded fallback data');
+          
+          // Fallback to hardcoded data based on the database structure from your memory
+          // This ensures the instructions modal will display even if the API is not available
+          data = {
+            id: 'instruction-slide',
+            title: 'CBSE English Class 4 Activity',
+            description: 'In this activity, you will practice English pronunciation by repeating the words shown on each slide. Click the microphone button to record your voice.',
+            image_path: 'https://zmubswgdqfmleajkccqk.supabase.co/storage/v1/object/public/activity-images/cbse_eng_4001/instruction.jpg',
+            order_index: 0,
+            is_active: true
+          };
+        }
+        
+        // At this point, we either have data from the API or our fallback
+        
+        // If we have a display name from user profile, use it in the instructions
+        if (displayName && userRole === 'schools') {
+          console.log(`Using school name from profile: ${displayName}`);
+          // We could customize the instructions based on the school name
+        }
+        
+        // Set the instruction image if available
+        const instructionsImage = document.getElementById('instructions-image');
+        const instructionsImageContainer = document.getElementById('instructions-image-container');
+        
+        if (data.image_path) {
+          instructionsImage.src = data.image_path;
+          instructionsImageContainer.style.display = 'block';
+          console.log('Setting instruction image from data:', data.image_path);
+        } else if (data.image_url) {
+          instructionsImage.src = data.image_url;
+          instructionsImageContainer.style.display = 'block';
+          console.log('Setting instruction image from URL:', data.image_url);
+        } else {
+          // No image available, hide the image container
+          instructionsImageContainer.style.display = 'none';
+          console.log('No instruction image available, hiding image container');
+        }
+        
+        // Debug the received data
+        console.log('Instruction data:', data);
+        
+        // Set audio URL if available
+        if (data.audio_url) {
+          instructionsAudio.src = data.audio_url;
+          playInstructionsAudio.style.display = 'flex';
+          console.log('Setting audio src from data:', data.audio_url);
+        } else if (data.audio_path) {
+          instructionsAudio.src = data.audio_path;
+          playInstructionsAudio.style.display = 'flex';
+          console.log('Setting audio from direct path:', data.audio_path);
+        } else if (window.userAudioUrl) {
+          // Use the audio URL from the user profile if available
+          instructionsAudio.src = window.userAudioUrl;
+          playInstructionsAudio.style.display = 'flex';
+          console.log('Using audio URL from user profile:', window.userAudioUrl);
+        } else {
+          // No audio available, hide the audio button
+          playInstructionsAudio.style.display = 'none';
+          console.log('No audio available, hiding audio button');
+        }
+        
+        // Set the description
+        instructionsDescription.innerHTML = data.description || 'No description available';
+        
+        // Set the title
+        instructionsTitle.textContent = data.title || 'Activity Instructions';
+        
+        // Handle image loading errors
+        instructionsImage.onerror = function() {
+          console.error('Failed to load instruction image');
+          instructionsImageContainer.style.display = 'none';
+        };
+        
+        // Return the data for chaining promises
+        return data;
+      } catch (error) {
+        console.error('Error fetching instructions:', error);
+        showToast('Failed to load instructions');
+        throw error; // Re-throw to allow proper promise chaining
+      }
+    }
+    
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function () {
+      // Set up audio recorder
+      setupRecorder();
+      // First fetch instructions and show the modal
+      fetchInstructions().then(() => {
+        // Show instructions modal automatically on page load
+        document.getElementById('instructions-modal').style.display = 'block';
+      }).catch(error => {
+        console.error('Error showing instructions modal:', error);
+        // If instructions fail to load, still load the slides
+        fetchSlides();
+      });
+      
+      // Wait for sidebar to be loaded
+      setTimeout(() => {
+        if (typeof initializeSidebar === 'function') {
+          initializeSidebar();
+        }
+      }, 100);
+    });
+    
+    // Function to set up audio recorder
+    async function setupRecorder() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        
+        mediaRecorder.ondataavailable = (event) => {
+          if (!isRecordingCancelled) {
+            audioChunks.push(event.data);
+          }
+        };
+        
+        mediaRecorder.onstop = async () => {
+          if (isRecordingCancelled) {
+            audioChunks.length = 0;
+            isRecordingCancelled = false;
+            return;
+          }
+          
+          const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+          audioChunks = [];
+          
+          // Process the audio recording
+          try {
+            // Show a temporary processing message
+            const processingDiv = ChatModule.addProcessingMessage();
+            
+            // Send audio blob directly to webhook with current slide number
+            const result = await sendToWebhook(audioBlob, currentSlideIndex);
+            
+            // Remove the processing message
+            ChatModule.removeProcessingMessage();
+          } catch (error) {
+            console.error('Error processing audio:', error);
+            showToast('Error processing audio');
+            ChatModule.addErrorMessage('Error processing audio: ' + error.message);
+          }
+        };
+        
+        return true;
+      } catch (error) {
+        console.error('Error setting up recorder:', error);
+        showToast('Could not access microphone');
+        return false;
+      }
+    }
+    
+    // Function to toggle recording
+    function toggleRecording() {
+      if (!isRecording) {
+        // Start recording
+        if (mediaRecorder) {
+          mediaRecorder.start();
+          isRecording = true;
+          isRecordingCancelled = false;
+          recordButton.classList.add('recording');
+          cancelButton.classList.remove('hidden');
+          showToast('Recording started');
+        } else {
+          setupRecorder().then(success => {
+            if (success) {
+              mediaRecorder.start();
+              isRecording = true;
+              isRecordingCancelled = false;
+              recordButton.classList.add('recording');
+              cancelButton.classList.remove('hidden');
+              showToast('Recording started');
+            }
+          });
+        }
+      } else {
+        // Stop recording
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+          mediaRecorder.stop();
+        }
+        isRecording = false;
+        recordButton.classList.remove('recording');
+        cancelButton.classList.add('hidden');
+        showToast('Recording stopped');
+      }
+    }
+    
+    // Function to send data to webhook and return the result
+    async function sendToWebhook(audioBlob, slideIndex) {
+      // Get audio URL from global variable or user profile
+      const webhookUrl = window.userAudioUrl || '';
+      
+      try {
+        // Check if webhook URL is empty
+        if (!webhookUrl) {
+          showToast('Audio URL not configured in user profile');
+          console.error('Audio URL not found in user profile');
+          return { success: false, error: 'Audio URL not configured' };
+        }
+        
+        // Create FormData to send the audio file
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'recording.mp3');
+        formData.append('slideNumber', slideIndex);
+        formData.append('timestamp', new Date().toISOString());
+        
+        // User ID is no longer being sent to the webhook
+        
+        // Send the data to the webhook
+        const response = await fetch(webhookUrl, {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Webhook error: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        // Log the entire response for debugging
+        console.log('Webhook response:', result);
+        
+        // Extract the text from the response format
+        let responseText = "Response received from server";
+        
+        // Handle different possible response formats
+        if (Array.isArray(result) && result.length > 0) {
+          if (result[0].text) {
+            responseText = result[0].text;
+            console.log('Found text in array format:', responseText);
+          }
+        } else if (result.text) {
+          // Direct object with text property
+          responseText = result.text;
+          console.log('Found text in direct object:', responseText);
+        } else if (typeof result === 'string') {
+          // Plain text response
+          responseText = result;
+          console.log('Found plain text response:', responseText);
+        } else {
+          // Just stringify the whole response as fallback
+          responseText = JSON.stringify(result);
+          console.log('Using stringified response:', responseText);
+        }
+        
+        // Display the transcribed text in the chat using the chat module
+        ChatModule.addUserMessage(responseText);
+        
+        return responseText;
+      } catch (error) {
+        console.error('Webhook error:', error);
+        
+        // Display error message in chat using the chat module
+        ChatModule.addErrorMessage('Could not process your request');
+        
+        return null;
+      }
+    }
+    
+    // Helper function to get current user ID
+    async function getCurrentUserId() {
+      try {
+        // First try to get from localStorage using our user profile utility
+        const userRole = window.userProfile.getUserRole();
+        if (userRole) {
+          const storedUser = localStorage.getItem('user');
+          if (storedUser) {
+            const user = JSON.parse(storedUser);
+            return user.id || 'anonymous';
+          }
+        }
+        
+        // Fallback to Supabase auth
+        const { data: { user } } = await supabase.auth.getUser();
+        return user?.id || 'anonymous';
+      } catch (error) {
+        console.error('Error getting user ID:', error);
+        return 'anonymous';
+      }
+    }
+    
+    // Event listeners
+    recordButton.addEventListener('click', () => {
+      toggleRecording();
+    });
+    
+    cancelButton.addEventListener('click', () => {
+      if (isRecording && mediaRecorder && mediaRecorder.state !== 'inactive') {
+        isRecordingCancelled = true;
+        mediaRecorder.stop();
+        isRecording = false;
+        recordButton.classList.remove('recording');
+        cancelButton.classList.add('hidden');
+        showToast('Recording cancelled');
+      }
+    });
+    
+    // Show logout confirmation modal
+    document.getElementById('logout-button').addEventListener('click', () => {
+      document.getElementById('logout-confirm-modal').style.display = 'block';
+    });
+    
+    // Close logout confirmation modal
+    document.getElementById('close-logout-modal').addEventListener('click', () => {
+      document.getElementById('logout-confirm-modal').style.display = 'none';
+    });
+    
+    // Cancel logout button
+    document.getElementById('cancel-logout-btn').addEventListener('click', () => {
+      document.getElementById('logout-confirm-modal').style.display = 'none';
+    });
+    
+    // Confirm logout button - actual logout functionality
+    document.getElementById('confirm-logout-btn').addEventListener('click', () => {
+      try {
+        // Hide the modal
+        document.getElementById('logout-confirm-modal').style.display = 'none';
+        showToast('Logging out...');
+        
+        // Clear all authentication related data
+        // 1. Clear localStorage
+        localStorage.clear();
+        
+        // 2. Clear all cookies related to the domain
+        document.cookie.split(';').forEach(cookie => {
+          const name = cookie.split('=')[0].trim();
+          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+        });
+        
+        // 3. If using Supabase, attempt to sign out but don't wait for it
+        try {
+          if (window.supabase) {
+            supabase.auth.signOut().then(() => {
+              console.log('Supabase logout successful');
+            }).catch(e => {
+              console.log('Supabase logout error (continuing anyway):', e);
+            });
+          }
+        } catch (e) {
+          console.log('Supabase not available, continuing with logout');
+        }
+        
+        // 4. Redirect to homepage or login page (this will happen regardless of Supabase success)
+        setTimeout(() => {
+          window.location.href = '../index.html';
+        }, 1000);
+      } catch (error) {
+        console.error('Logout error:', error);
+        showToast('Something went wrong, but we\'re still logging you out...');
+        
+        // Force redirect even if there's an error
+        setTimeout(() => {
+          window.location.href = '../index.html';
+        }, 2000);
+      }
+    });
+    
+    // Placeholder function for future implementation
+    function updateSupabaseConfig(slidesCount) {
+      // This function would update the Supabase configuration
+      // For example, changing the number of slides to display
+      console.log(`Updating configuration: slidesCount=${slidesCount}`);
+      
+      // In a real implementation, you would update the Supabase table
+      // const { data, error } = await supabase
+      //   .from('slider_config')
+      //   .update({ slides_count: slidesCount })
+      //   .eq('id', 1);
+      
+      fetchSlides(); // Reload slides with new configuration
+    }
+    
+    // Update student roster initialization script
+    document.addEventListener('DOMContentLoaded', function() {
+      // Wait for the student roster module to be loaded
+      setTimeout(() => {
+        if (window.StudentRoster) {
+          console.log('Initializing student roster');
+          window.studentRoster = window.StudentRoster.init();
+          
+          // Set up student toggle button functionality if not already handled
+          const studentsToggleBtn = document.getElementById('students-toggle');
+          if (studentsToggleBtn) {
+            studentsToggleBtn.addEventListener('click', function() {
+              if (window.studentRoster) {
+                window.studentRoster.toggleRoster();
+              }
+            });
+          }
+        } else {
+          console.warn('Student roster module not available');
+        }
+      }, 500);
+    });
+  </script>
+</body>
+
+</html>

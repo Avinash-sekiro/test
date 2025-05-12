@@ -14,6 +14,11 @@ RUN cd frontend && npm install
 # Set environment variables
 ENV NODE_ENV=production
 ENV PORT=3000
+ENV SUPABASE_URL=https://zmubswgdqfmleajkccqk.supabase.co
+ENV SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptdWJzd2dkcWZtbGVhamtjY3FrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTUxNzkxNzAsImV4cCI6MjAzMDc1NTE3MH0.Nh0fPXLQnpxUzRYN5Mfn4YZZlcnCWnYwMVjGmMGJpLY
+ENV ALLOWED_ORIGINS=*
+ENV API_URL=http://localhost:3000
+ENV FRONTEND_URL=http://localhost:8080
 
 # Expose port
 EXPOSE 3000

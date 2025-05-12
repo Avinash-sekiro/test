@@ -9,10 +9,18 @@
   if (isProduction) {
     // In production, use the same origin
     window.API_URL = window.location.origin;
+    
+    // Debug information for troubleshooting
+    console.log('Running in production mode');
+    console.log('Hostname:', window.location.hostname);
+    console.log('Origin:', window.location.origin);
   } else {
     // In development, use localhost:3000
     window.API_URL = 'http://localhost:3000';
   }
+  
+  // Add a global variable to indicate we're in Docker
+  window.isDocker = true;
   
   console.log('API URL configured:', window.API_URL);
   console.log('Environment:', isProduction ? 'Production' : 'Development');

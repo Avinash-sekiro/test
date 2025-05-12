@@ -126,12 +126,17 @@ async function loginUser(email, password) {
     
     // If not using mock credentials, try to authenticate with the server
     try {
+      // Log the API URL for debugging
+      console.log('Login attempt with API URL:', window.API_URL);
+      console.log('Full login URL:', `${window.API_URL}/api/v1/auth/login`);
+      console.log('Login payload:', { email, password: '***' });
+      
       const response = await fetch(`${window.API_URL}/api/v1/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        credentials: 'include',
+        // Don't use credentials: 'include' in Docker environment as it can cause CORS issues
         body: JSON.stringify({ email, password })
       });
 

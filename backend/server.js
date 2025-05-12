@@ -27,13 +27,18 @@ app.use(express.urlencoded({ extended: true }));
 
 // Configure CORS for production
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? process.env.ALLOWED_ORIGINS?.split(',') || [
-        process.env.FRONTEND_URL || 'https://yourdomain.com',
-        'http://localhost:8080',
-        'http://127.0.0.1:8080'
-      ] 
-    : ['http://localhost:8080', 'http://127.0.0.1:8080', 'http://localhost:3000', 'http://127.0.0.1:3000'],
+  // Allow all origins if ALLOWED_ORIGINS is set to * or in development mode
+  origin: process.env.ALLOWED_ORIGINS === '*' 
+    ? true // Allow any origin
+    : process.env.NODE_ENV === 'production' 
+      ? process.env.ALLOWED_ORIGINS?.split(',') || [
+          process.env.FRONTEND_URL || 'https://yourdomain.com',
+          'http://localhost:8080',
+          'http://127.0.0.1:8080',
+          // Add the deployed URL
+          'https://xw44wo0sk4oc408sccso08ok.147.79.67.62.sslip.io'
+        ] 
+      : ['http://localhost:8080', 'http://127.0.0.1:8080', 'http://localhost:3000', 'http://127.0.0.1:3000'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,

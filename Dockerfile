@@ -17,8 +17,9 @@ ENV PORT=3000
 ENV SUPABASE_URL=https://zmubswgdqfmleajkccqk.supabase.co
 ENV SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptdWJzd2dkcWZtbGVhamtjY3FrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTUxNzkxNzAsImV4cCI6MjAzMDc1NTE3MH0.Nh0fPXLQnpxUzRYN5Mfn4YZZlcnCWnYwMVjGmMGJpLY
 ENV ALLOWED_ORIGINS=*
-ENV API_URL=http://localhost:3000
-ENV FRONTEND_URL=http://localhost:8080
+# Use the public URL for API access
+ENV API_URL=https://xw44wo0sk4oc408sccso08ok.147.79.67.62.sslip.io
+ENV FRONTEND_URL=https://xw44wo0sk4oc408sccso08ok.147.79.67.62.sslip.io
 
 # Expose port
 EXPOSE 3000

@@ -1,0 +1,4 @@
+{
+  "buildPack": "docker",
+  "dockerfilePath": "Dockerfile"
+}

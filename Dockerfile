@@ -1,19 +1,14 @@
-FROM node:18
+FROM node:16
 
 # Create app directory
 WORKDIR /app
 
-# Copy package.json files first for better caching
-COPY package.json ./
-COPY backend/package.json ./backend/
-COPY frontend/package.json ./frontend/
+# Copy everything at once to simplify
+COPY . .
 
 # Install dependencies
-RUN npm install -g npm@latest
-RUN npm run install-all
-
-# Copy source code
-COPY . .
+RUN cd backend && npm install
+RUN cd frontend && npm install
 
 # Set environment variables
 ENV NODE_ENV=production
